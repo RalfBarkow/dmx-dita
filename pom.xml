@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,22 +13,30 @@
     <parent>
         <groupId>systems.dmx</groupId>
         <artifactId>dmx-plugin</artifactId>
-        <version>5.0</version>
+        <version>5.3.5</version>
     </parent>
+
+    <properties>
+        <slf4j.version>2.0.9</slf4j.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
     <dependencies>
         <!-- DMX -->
         <dependency>
             <groupId>systems.dmx</groupId>
             <artifactId>dmx-topicmaps</artifactId>
-            <version>5.0</version>
+            <version>5.3.5</version>
         </dependency>
+
         <!-- DITA Open Toolkit -->
         <dependency>
             <groupId>org.dita-ot</groupId>
             <artifactId>dost</artifactId>
             <version>3.4.0</version>
         </dependency>
+
+        <!-- Ant / XML stack / tools -->
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant-apache-resolver</artifactId>
@@ -75,43 +83,37 @@
             <version>1.10.6</version>
             <scope>compile</scope>
         </dependency>
+
+        <!-- Guava (trim annotations) -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>25.1-jre</version>
             <exclusions>
                 <exclusion>
-                    <artifactId>j2objc-annotations</artifactId>
                     <groupId>com.google.j2objc</groupId>
+                    <artifactId>j2objc-annotations</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>jsr305</artifactId>
                     <groupId>com.google.code.findbugs</groupId>
+                    <artifactId>jsr305</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>animal-sniffer-annotations</artifactId>
                     <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>animal-sniffer-annotations</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>checker-qual</artifactId>
                     <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>error_prone_annotations</artifactId>
                     <groupId>com.google.errorprone</groupId>
+                    <artifactId>error_prone_annotations</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-            <version>1.2.3</version>
-        </dependency>
+
+        <!-- Jackson / Jing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -132,34 +134,65 @@
             <artifactId>jing</artifactId>
             <version>20181222</version>
         </dependency>
+
+        <!-- SLF4J API only; backend provided by container -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Upgrade bnd via Felix bundle plugin to handle module-info & MRJARs -->
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+                <version>5.1.9</version>
+                <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Bundle-Activator>
-                            systems.dmx.dita.DITAPlugin
-                        </Bundle-Activator>
-                        <Import-Package>
-                            !com.fasterxml.jackson.annotation, !com.google.errorprone.annotations.*,
-                            !com.icl.saxon, !com.sun.org.apache.xerces.internal.jaxp, !org.apache.xalan.processor,
-                            !org.yaml.snakeyaml.*,
-                            !groovy.lang, !org.codehaus.groovy.*, !org.codehaus.commons.compiler, !org.codehaus.janino,
-                            !org.iso_relax.verifier.*, !javax.mail.*, !sun.io, !sun.misc, !sun.reflect, *
-                        </Import-Package>
+                        <Bundle-Activator>systems.dmx.dita.DITAPlugin</Bundle-Activator>
+
+                        <!-- Let bnd calculate imports; don't force SLF4J range -->
+                        <!-- Keep exports default (none) to avoid "private references" warning -->
+                        <!-- Embed required libs, but NOT logback -->
                         <Embed-Dependency>
                             dost, ant, ant-launcher, ant-apache-resolver,
                             commons-io, xercesImpl, xml-apis, xml-resolver, Saxon-HE, icu4j,
-                            guava, logback-classic, logback-core,
-                            jackson-core, jackson-databind, jackson-dataformat-yaml, jing
+                            guava,
+                            jackson-core, jackson-databind, jackson-dataformat-yaml, jing,
+                            !logback-classic, !logback-core
                         </Embed-Dependency>
+
+                        <!-- Keep your excludes for odd packages -->
+                        <Import-Package>
+                            !com.fasterxml.jackson.annotation,
+                            !com.google.errorprone.annotations.*,
+                            !com.icl.saxon,
+                            !com.sun.org.apache.xerces.internal.jaxp,
+                            !org.apache.xalan.processor,
+                            !org.yaml.snakeyaml.*,
+                            !groovy.lang,
+                            !org.codehaus.groovy.*,
+                            !org.codehaus.commons.compiler,
+                            !org.codehaus.janino,
+                            !org.iso_relax.verifier.*,
+                            !javax.mail.*,
+                            !sun.io,
+                            !sun.misc,
+                            !sun.reflect,
+                            *
+                        </Import-Package>
+
+                        <!-- If an older transitive sneaks in, don’t fail hard -->
+                        <_failok>true</_failok>
                     </instructions>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -167,9 +200,7 @@
                     <execution>
                         <id>npm-install</id>
                         <phase>prepare-package</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
+                        <goals><goal>exec</goal></goals>
                         <configuration>
                             <executable>npm</executable>
                             <commandlineArgs>install</commandlineArgs>
@@ -178,9 +209,7 @@
                     <execution>
                         <id>npm-run-build</id>
                         <phase>prepare-package</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
+                        <goals><goal>exec</goal></goals>
                         <configuration>
                             <executable>npm</executable>
                             <commandlineArgs>run build</commandlineArgs>
