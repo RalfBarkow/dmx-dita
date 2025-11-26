@@ -63,6 +63,25 @@
             <version>${logback.version}</version>
         </dependency>
 
+        <!-- add next to your other Jackson deps -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.13.4</version>
+        </dependency>
+
+        <!-- DITA-OT transitive needs -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.33</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tukaani</groupId>
+            <artifactId>xz</artifactId>
+            <version>1.9</version>
+        </dependency>
+
         <!-- Force test libs to test scope so they never get embedded -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -136,21 +155,10 @@
                                 <Bundle-Name>DMX DITA</Bundle-Name>
                                 <Bundle-Activator>systems.dmx.dita.DITAPlugin</Bundle-Activator>
 
-                                <!-- Only export our API -->
+                                <!-- Export only our API -->
                                 <Export-Package>systems.dmx.dita;version="${project.version}"</Export-Package>
 
-                                <!-- Never import java.*, don't force Logback; rely on SLF4J only -->
-                                <!-- Order matters: negatives first, wildcard last -->
-                                <Import-Package>
-                                    !java.*,
-                                    !sun.*,
-                                    ch.qos.logback.*;resolution:=optional,
-                                    javax.ws.rs*;version="[1.1,2)",
-                                    org.slf4j;version="[1.7,3)",
-                                    *
-                                </Import-Package>
-
-                                <!-- Embed DITA-OT 3.7.x dependencies we need; exclude logback & test libs -->
+                                <!-- Deterministic embedding: include all needed libs explicitly -->
                                 <Embed-Dependency>
                                     dost,
                                     ant,ant-launcher,ant-apache-resolver,
@@ -160,15 +168,40 @@
                                     icu4j,
                                     guava,
                                     jackson-core,jackson-databind,jackson-dataformat-yaml,
-                                    jing
+                                    jackson-annotations,
+                                    jing,
+                                    snakeyaml,
+                                    xz
                                 </Embed-Dependency>
-                                <Embed-Transitive>true</Embed-Transitive>
+                                <Embed-Transitive>false</Embed-Transitive>
 
-                                <!-- Keep Java 8 EE requirement; XML-escape the ampersand to avoid POM parse errors -->
-                                <Require-Capability>osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version=1.8))"
-                                </Require-Capability>
+                                <!-- Java 8 runtime capability -->
+                                <Require-Capability>osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version=1.8))"</Require-Capability>
 
-                                <!-- Belt-and-suspenders: tell bnd not to import java.* even if analysis finds references -->
+                                <!-- Don’t import JRE packages; tame vendor/tooling packages; widen SLF4J helpers -->
+                                <Import-Package>
+                                    !java.*,
+                                    !sun.*,
+                                    com.sun.*;resolution:=optional,
+                                    gnu.*;resolution:=optional,
+                                    kaffe.*;resolution:=optional,
+                                    org.apache.harmony.*;resolution:=optional,
+                                    com.sun.org.apache.xerces.internal.*;resolution:=optional,
+                                    weblogic;resolution:=optional,
+                                    javax.activation;resolution:=optional,
+                                    javax.mail.*;resolution:=optional,
+                                    jline.*;resolution:=optional,
+                                    org.iso_relax.verifier*;resolution:=optional,
+                                    org.apache.xalan.*;resolution:=optional,
+                                    com.icl.saxon*;resolution:=optional,
+                                    javax.ws.rs*;version="[1.1,2)",
+                                    org.slf4j;version="[1.7,3)",
+                                    org.slf4j.helpers;version="[2.0,3)",
+                                    ch.qos.logback.*;resolution:=optional,
+                                    *
+                                </Import-Package>
+
+                                <!-- Extra guard: never import java.* even if analysis finds references -->
                                 <_noimportjava>true</_noimportjava>
                             </instructions>
 
