@@ -11,9 +11,14 @@ import org.dita.dost.ProcessorFactory;
 import org.dita.dost.util.Configuration;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 
 
@@ -21,15 +26,17 @@ class DITAProcess {
 
     // ------------------------------------------------------------------------------------------------------- Constants
 
-    // TODO: use system properties
-    private static final File DITA_DIR   = new File(System.getProperty("dmx.dita.install_dir", ""));
-    private static final File OUTPUT_DIR = new File(System.getProperty("dmx.dita.output_dir", ""));
-    private static final File TEMP_DIR   = new File(System.getProperty("dmx.dita.temp_dir", ""));
+    private static final File DITA_DIR = resolveDir("dmx.dita.install_dir", "dita-ot");
+    private static final File OUTPUT_DIR = resolveDir("dmx.dita.output_dir", "dita-output");
+    private static final File TEMP_DIR = resolveDir("dmx.dita.temp_dir", "dita-temp");
 
-    private static final DITAExporter exporter = new DITAExporter(TEMP_DIR);
-    private static final ProcessorFactory pf = ProcessorFactory.newInstance(DITA_DIR);
+    private static final DITAExporter exporter;
+    private static final ProcessorFactory pf;
 
     static {
+        ensureDitaOtAvailable();
+        exporter = new DITAExporter(TEMP_DIR);
+        pf = ProcessorFactory.newInstance(DITA_DIR);
         pf.setBaseTempDir(TEMP_DIR);
     }
 
@@ -140,5 +147,63 @@ class DITAProcess {
             "\n      Current ClassLoader=" + currentClassLoader + ", parent=" + currentClassLoader.getParent() +
             "\n      Bundle ClassLoader=" + bundleClassloader + ", parent=" + bundleClassloader.getParent() +
             "\n      Available transtypes=" + Configuration.transtypes);
+    }
+
+    // ------------------------------------------------------------------------------------------------- Static helpers
+
+    private static File resolveDir(String property, String fallbackName) {
+        String raw = System.getProperty(property, "").trim();
+        File dir = raw.isEmpty()
+            ? new File(System.getProperty("java.io.tmpdir"), "dmx-dita/" + fallbackName)
+            : new File(raw);
+        if (!dir.isAbsolute()) {
+            dir = dir.getAbsoluteFile();
+        }
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IllegalStateException("Could not create directory " + dir);
+        }
+        return dir;
+    }
+
+    private static void ensureDitaOtAvailable() {
+        // If a proper install dir is configured and looks valid, keep it.
+        if (new File(DITA_DIR, "config").isDirectory()) {
+            return;
+        }
+        // Otherwise unpack the embedded DITA-OT distribution (dost-3.7.3.jar) into the install dir.
+        try (InputStream in = DITAProcess.class.getClassLoader().getResourceAsStream("dost-3.7.3.jar")) {
+            if (in == null) {
+                throw new IllegalStateException("Embedded DITA-OT (dost-3.7.3.jar) not found on the bundle classpath");
+            }
+            unzip(in, DITA_DIR);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to unpack embedded DITA-OT into " + DITA_DIR, e);
+        }
+    }
+
+    private static void unzip(InputStream data, File targetDir) throws IOException {
+        try (ZipInputStream zis = new ZipInputStream(data)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                File out = new File(targetDir, entry.getName());
+                if (entry.isDirectory()) {
+                    if (!out.exists() && !out.mkdirs()) {
+                        throw new IOException("Failed to create directory " + out);
+                    }
+                } else {
+                    File parent = out.getParentFile();
+                    if (!parent.exists() && !parent.mkdirs()) {
+                        throw new IOException("Failed to create directory " + parent);
+                    }
+                    try (FileOutputStream fos = new FileOutputStream(out)) {
+                        byte[] buffer = new byte[8192];
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
