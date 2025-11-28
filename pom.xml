@@ -50,6 +50,22 @@
             <artifactId>dost</artifactId>
             <version>${dita.ot.version}</version>
         </dependency>
+        <!-- XML parser stack used by DITA-OT -->
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>2.12.2</version>
+        </dependency>
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <version>1.4.01</version>
+        </dependency>
+        <dependency>
+            <groupId>xml-resolver</groupId>
+            <artifactId>xml-resolver</artifactId>
+            <version>1.2</version>
+        </dependency>
         <!-- Ant runtime used by DITA-OT -->
         <dependency>
             <groupId>org.apache.ant</groupId>
