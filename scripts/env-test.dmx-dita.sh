@@ -18,7 +18,6 @@ if [[ -f "${ROOT_DIR}/config/env-test.dmx-dita.env" ]]; then
   source "${ROOT_DIR}/config/env-test.dmx-dita.env"
 fi
 
-DMX_CMD="${DMX_CMD:-${DMX_ROOT_DEFAULT}/dmx-run-backend}"
 DMX_HOST="${DMX_HOST:-127.0.0.1}"
 DMX_PORT="${DMX_PORT:-8080}"
 DMX_BASE_URL="http://${DMX_HOST}:${DMX_PORT}"
@@ -46,7 +45,7 @@ check_java() {
   local v
   v=$(java -version 2>&1 | head -n1)
   log "Java: $v"
-  if ! grep -E '1\.8|\"8\.' <<<"$v" >/dev/null; then
+  if ! grep -E '1\.8|"8\.' <<<"$v" >/dev/null; then
     fail "Java 8 required; got: $v"
   fi
 }
@@ -63,8 +62,21 @@ check_node() {
   fi
 }
 
+resolve_dmx_cmd() {
+  if [[ -n "${DMX_CMD:-}" ]]; then
+    echo "$DMX_CMD"
+    return
+  fi
+  if command -v dmx-run-backend >/dev/null 2>&1; then
+    echo "$(command -v dmx-run-backend)"
+    return
+  fi
+  echo "${DMX_ROOT_DEFAULT}/dmx-run-backend"
+}
+
 start_dmx() {
   require_cmd curl
+  DMX_CMD="$(resolve_dmx_cmd)"
   [[ -x "$DMX_CMD" ]] || fail "DMX_CMD not executable: $DMX_CMD"
   mkdir -p "$DITA_OUTPUT_DIR"
   log "Starting DMX: $DMX_CMD"
