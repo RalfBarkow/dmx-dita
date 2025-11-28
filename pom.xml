@@ -50,6 +50,12 @@
             <artifactId>dost</artifactId>
             <version>${dita.ot.version}</version>
         </dependency>
+        <!-- Saxon used by DITA-OT transforms -->
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
+            <version>11.4</version>
+        </dependency>
         <!-- RELAX NG implementation for DITA validation -->
         <dependency>
             <groupId>org.relaxng</groupId>
