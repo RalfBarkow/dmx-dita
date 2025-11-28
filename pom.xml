@@ -50,6 +50,12 @@
             <artifactId>dost</artifactId>
             <version>${dita.ot.version}</version>
         </dependency>
+        <!-- RELAX NG implementation for DITA validation -->
+        <dependency>
+            <groupId>org.relaxng</groupId>
+            <artifactId>jing</artifactId>
+            <version>20181222</version>
+        </dependency>
 
         <!-- Embed Logback so no Import-Package ch.qos.logback.* is needed -->
         <dependency>

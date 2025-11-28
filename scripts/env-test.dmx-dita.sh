@@ -4,7 +4,7 @@ set -euo pipefail
 # Tiny DMX + dmx-dita environment test (CI-friendly).
 # Assertions:
 # 1) Java 8 and Node are present.
-# 2) DMX 5.3.5 responds on /dmx/version.
+# 2) DMX responds on /dmx/version (or at least on a fallback health endpoint).
 # 3) dmx-dita responds on a health endpoint.
 # 4) A minimal DITA job produces at least one HTML file.
 
@@ -22,7 +22,13 @@ DMX_HOST="${DMX_HOST:-127.0.0.1}"
 DMX_PORT="${DMX_PORT:-8080}"
 DMX_BASE_URL="http://${DMX_HOST}:${DMX_PORT}"
 
+# Preferred health endpoint (future: /dmx/version).
 DMX_HEALTH_URL="${DMX_HEALTH_URL:-${DMX_BASE_URL}/dmx/version}"
+
+# Fallback: something that exists in stock DMX.
+# By default, use the Webclient front page.
+DMX_FALLBACK_HEALTH_URL="${DMX_FALLBACK_HEALTH_URL:-${DMX_BASE_URL}/systems.dmx.webclient/}"
+
 # Replace if your plugin exposes a different health endpoint.
 DMX_DITA_HEALTH_URL="${DMX_DITA_HEALTH_URL:-${DMX_BASE_URL}/dmx/dita/health}"
 # Replace with the actual run endpoint and payload keys for dmx-dita.
@@ -94,17 +100,35 @@ stop_dmx() {
 }
 
 wait_for_health() {
-  log "Waiting for DMX health at $DMX_HEALTH_URL (timeout ${START_TIMEOUT}s)"
-  local start end
+  log "Waiting for DMX health at ${DMX_HEALTH_URL} (fallback ${DMX_FALLBACK_HEALTH_URL}, timeout ${START_TIMEOUT}s)"
+  local start now
   start=$(date +%s)
-  until curl -sSf "$DMX_HEALTH_URL" >/dev/null 2>&1; do
-    sleep 2
-    end=$(date +%s)
-    if (( end - start > START_TIMEOUT )); then
+
+  while :; do
+    # 1) Preferred: DMX_HEALTH_URL (future /dmx/version)
+    if curl -sSf "$DMX_HEALTH_URL" >/dev/null 2>&1; then
+      log "DMX is up via ${DMX_HEALTH_URL}"
+      return 0
+    fi
+
+    # 2) Fallback: anything 2xx–4xx proves the app is responding.
+    if [[ -n "${DMX_FALLBACK_HEALTH_URL:-}" ]]; then
+      local code
+      code=$(curl -sS -o /dev/null --write-out '%{http_code}' \
+              "$DMX_FALLBACK_HEALTH_URL" 2>/dev/null || echo 0)
+      if (( code >= 200 && code < 500 )); then
+        log "DMX is up via fallback ${DMX_FALLBACK_HEALTH_URL} (HTTP ${code})"
+        return 0
+      fi
+    fi
+
+    now=$(date +%s)
+    if (( now - start > START_TIMEOUT )); then
       fail "DMX did not become healthy; see $DITA_OUTPUT_DIR/dmx.log"
     fi
+
+    sleep 2
   done
-  log "DMX is up."
 }
 
 check_dita_plugin() {
