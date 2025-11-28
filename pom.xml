@@ -71,6 +71,22 @@
             <artifactId>xmlresolver</artifactId>
             <version>4.4.3</version>
         </dependency>
+        <!-- HTTP client stack used transitively by XML resolver -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+            <version>5.1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5-h2</artifactId>
+            <version>5.1.3</version>
+        </dependency>
         <!-- Ant runtime used by DITA-OT -->
         <dependency>
             <groupId>org.apache.ant</groupId>
@@ -219,6 +235,7 @@
                                     ant,ant-launcher,ant-apache-resolver,
                                     commons-io,
                                     xercesImpl,xml-apis,xml-resolver,xmlresolver,
+                                    httpclient5,httpcore5,httpcore5-h2,
                                     Saxon-HE,
                                     icu4j,
                                     guava,
