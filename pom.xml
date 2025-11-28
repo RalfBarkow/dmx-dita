@@ -228,6 +228,7 @@
                                     org.iso_relax.verifier*;resolution:=optional,
                                     org.apache.xalan.*;resolution:=optional,
                                     !org.apache.commons.io*,
+                                    !org.apache.env.*,
                                     com.icl.saxon*;resolution:=optional,
                                     javax.ws.rs*;version="[1.1,2)",
                                     org.slf4j;version="[1.7,3)",
