@@ -66,6 +66,11 @@
             <artifactId>xml-resolver</artifactId>
             <version>1.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.xmlresolver</groupId>
+            <artifactId>xmlresolver</artifactId>
+            <version>4.4.3</version>
+        </dependency>
         <!-- Ant runtime used by DITA-OT -->
         <dependency>
             <groupId>org.apache.ant</groupId>
@@ -213,7 +218,7 @@
                                     dost,
                                     ant,ant-launcher,ant-apache-resolver,
                                     commons-io,
-                                    xercesImpl,xml-apis,xml-resolver,
+                                    xercesImpl,xml-apis,xml-resolver,xmlresolver,
                                     Saxon-HE,
                                     icu4j,
                                     guava,
